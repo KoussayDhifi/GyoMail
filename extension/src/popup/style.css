@@ -1,0 +1,451 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  width: 420px;
+  min-height: 520px;
+
+  font-family:
+    Inter,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+
+  background: #f8fafc;
+  color: #172033;
+}
+
+
+.popup {
+  width: 100%;
+  padding: 20px;
+}
+
+
+/* =========================
+   Header
+========================= */
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  margin-bottom: 20px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logo {
+  width: 42px;
+  height: 42px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 12px;
+
+  background: #635bff;
+  color: white;
+
+  font-size: 22px;
+}
+
+.brand h1 {
+  font-size: 19px;
+  font-weight: 700;
+}
+
+.brand p {
+  margin-top: 2px;
+
+  font-size: 11px;
+  color: #7b8497;
+}
+
+.settings-btn {
+  width: 34px;
+  height: 34px;
+
+  border: none;
+  border-radius: 9px;
+
+  background: transparent;
+
+  font-size: 18px;
+  color: #687286;
+
+  cursor: pointer;
+}
+
+.settings-btn:hover {
+  background: #edf0f5;
+}
+
+
+/* =========================
+   Scan Card
+========================= */
+
+.scan-card {
+  padding: 16px;
+
+  border: 1px solid #e6eaf0;
+  border-radius: 14px;
+
+  background: white;
+
+  box-shadow: 0 2px 8px rgba(20, 30, 50, 0.04);
+}
+
+.scan-header {
+  display: flex;
+  align-items: center;
+}
+
+.status-icon {
+  width: 38px;
+  height: 38px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 11px;
+
+  background: #e8f8ef;
+
+  font-size: 19px;
+}
+
+.scan-info {
+  margin-left: 11px;
+}
+
+.scan-info h2 {
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.scan-info p {
+  margin-top: 3px;
+
+  font-size: 11px;
+  color: #8a93a5;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+
+  margin-left: auto;
+
+  border-radius: 50%;
+
+  background: #20b26b;
+  box-shadow: 0 0 0 3px #dff7eb;
+}
+
+
+/* =========================
+   Statistics
+========================= */
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+
+  gap: 10px;
+
+  margin-top: 12px;
+}
+
+.stat-card {
+  padding: 13px;
+
+  border-radius: 12px;
+
+  display: flex;
+  flex-direction: column;
+
+  align-items: center;
+
+  border: 1px solid;
+}
+
+.stat-number {
+  font-size: 21px;
+  font-weight: 750;
+}
+
+.stat-label {
+  margin-top: 2px;
+
+  font-size: 10px;
+  font-weight: 550;
+}
+
+
+/* phishing */
+
+.stat-card.danger {
+  background: #fff1f2;
+  border-color: #ffd9dd;
+  color: #d93648;
+}
+
+
+/* suspicious */
+
+.stat-card.warning {
+  background: #fff8e8;
+  border-color: #ffe9b4;
+  color: #c78300;
+}
+
+
+/* safe */
+
+.stat-card.safe {
+  background: #ecfaf3;
+  border-color: #d0f2df;
+  color: #188653;
+}
+
+
+/* =========================
+   Section
+========================= */
+
+.section {
+  margin-top: 22px;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  margin-bottom: 9px;
+}
+
+.section-header h2 {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.view-all {
+  border: none;
+  background: transparent;
+
+  color: #635bff;
+
+  font-size: 10px;
+  font-weight: 600;
+
+  cursor: pointer;
+}
+
+
+/* =========================
+   Email cards
+========================= */
+
+.email-card {
+  position: relative;
+
+  display: flex;
+  align-items: center;
+
+  gap: 10px;
+
+  padding: 12px;
+
+  margin-bottom: 7px;
+
+  border-radius: 12px;
+
+  background: white;
+
+  border: 1px solid #e8ebf0;
+
+  transition: 0.15s ease;
+}
+
+.email-card:hover {
+  transform: translateY(-1px);
+
+  box-shadow:
+    0 4px 12px rgba(20, 30, 50, 0.07);
+}
+
+
+/* Email icon */
+
+.email-icon {
+  width: 30px;
+  height: 30px;
+
+  flex-shrink: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 9px;
+
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.phishing .email-icon {
+  background: #ffe1e5;
+  color: #d93648;
+}
+
+.suspicious .email-icon {
+  background: #fff0c9;
+  color: #c78300;
+}
+
+.safe-email .email-icon {
+  background: #ddf7e8;
+  color: #188653;
+}
+
+
+/* Email content */
+
+.email-content {
+  min-width: 0;
+  flex: 1;
+}
+
+.email-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.email-top strong {
+  overflow: hidden;
+
+  white-space: nowrap;
+  text-overflow: ellipsis;
+
+  font-size: 11px;
+}
+
+.email-top span {
+  flex-shrink: 0;
+
+  font-size: 9px;
+
+  color: #9aa2b1;
+}
+
+.email-subject {
+  margin-top: 3px;
+
+  overflow: hidden;
+
+  white-space: nowrap;
+  text-overflow: ellipsis;
+
+  font-size: 10px;
+  font-weight: 550;
+}
+
+.email-snippet {
+  margin-top: 3px;
+
+  overflow: hidden;
+
+  white-space: nowrap;
+  text-overflow: ellipsis;
+
+  font-size: 9px;
+
+  color: #8c95a5;
+}
+
+
+/* =========================
+   Badges
+========================= */
+
+.badge {
+  flex-shrink: 0;
+
+  padding: 4px 7px;
+
+  border-radius: 6px;
+
+  font-size: 8px;
+  font-weight: 650;
+}
+
+.danger-badge {
+  background: #ffe3e6;
+  color: #d93648;
+}
+
+.warning-badge {
+  background: #fff0ca;
+  color: #bd7800;
+}
+
+.safe-badge {
+  background: #dcf7e8;
+  color: #188653;
+}
+
+
+/* =========================
+   Footer
+========================= */
+
+.footer {
+  margin-top: 18px;
+
+  padding: 12px;
+
+  border-radius: 11px;
+
+  background: #f0f2ff;
+}
+
+.footer-status {
+  display: flex;
+  align-items: center;
+
+  gap: 10px;
+}
+
+.footer-status .status-dot {
+  margin-left: 0;
+
+  width: 7px;
+  height: 7px;
+}
+
+.footer-status strong {
+  font-size: 10px;
+  font-weight: 650;
+}
+
+.footer-status p {
+  margin-top: 2px;
+
+  font-size: 9px;
+  color: #858da1;
+}

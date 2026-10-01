@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="stylesheet" href="style.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GyoMail Popup</title>
+  </head>
+  <body>
+     <main class="popup">
+
+    <!-- Header -->
+    <header class="header">
+      <div class="brand">
+        <div class="logo">👻</div>
+
+        <div>
+          <h1>GyoMail</h1>
+          <p>AI-powered email protection</p>
+        </div>
+      </div>
+
+      <button class="settings-btn" aria-label="Settings">
+        ⚙
+      </button>
+    </header>
+
+
+    <!-- Scan status -->
+    <section class="scan-card">
+
+      <div class="scan-header">
+        <div class="status-icon">
+          🛡
+        </div>
+
+        <div class="scan-info">
+          <h2>Inbox analyzed</h2>
+          <p>12 emails checked</p>
+        </div>
+
+        <span class="status-dot"></span>
+      </div>
+
+    </section>
+
+
+    <!-- Statistics -->
+    <section class="stats">
+
+      <div class="stat-card danger">
+        <span class="stat-number">2</span>
+        <span class="stat-label">Phishing</span>
+      </div>
+
+      <div class="stat-card warning">
+        <span class="stat-number">3</span>
+        <span class="stat-label">Suspicious</span>
+      </div>
+
+      <div class="stat-card safe">
+        <span class="stat-number">7</span>
+        <span class="stat-label">Safe</span>
+      </div>
+
+    </section>
+
+
+    <!-- Recent detections -->
+    <section class="section">
+
+      <div class="section-header">
+        <h2>Recent analysis</h2>
+        <button class="view-all">View all</button>
+      </div>
+
+
+      <!-- Email -->
+      <article class="email-card phishing">
+
+        <div class="email-icon">
+          !
+        </div>
+
+        <div class="email-content">
+          <div class="email-top">
+            <strong>Google Security</strong>
+            <span>10:24</span>
+          </div>
+
+          <p class="email-subject">
+            Your account will be suspended
+          </p>
+
+          <p class="email-snippet">
+            We've detected unusual activity...
+          </p>
+        </div>
+
+        <span class="badge danger-badge">
+          Phishing
+        </span>
+
+      </article>
+
+
+      <!-- Email -->
+      <article class="email-card suspicious">
+
+        <div class="email-icon">
+          !
+        </div>
+
+        <div class="email-content">
+          <div class="email-top">
+            <strong>Amazon</strong>
+            <span>09:17</span>
+          </div>
+
+          <p class="email-subject">
+            Order #123-456789 requires action
+          </p>
+
+          <p class="email-snippet">
+            There was a problem processing...
+          </p>
+        </div>
+
+        <span class="badge warning-badge">
+          Suspicious
+        </span>
+
+      </article>
+
+
+      <!-- Email -->
+      <article class="email-card safe-email">
+
+        <div class="email-icon">
+          ✓
+        </div>
+
+        <div class="email-content">
+          <div class="email-top">
+            <strong>Google</strong>
+            <span>08:03</span>
+          </div>
+
+          <p class="email-subject">
+            Security alert
+          </p>
+
+          <p class="email-snippet">
+            New sign-in to your Google Account...
+          </p>
+        </div>
+
+        <span class="badge safe-badge">
+          Safe
+        </span>
+
+      </article>
+
+    </section>
+
+
+    <!-- Footer -->
+    <footer class="footer">
+
+      <div class="footer-status">
+        <span class="status-dot"></span>
+
+        <div>
+          <strong>GyoMail is active</strong>
+          <p>Monitoring your inbox</p>
+        </div>
+      </div>
+
+    </footer>
+
+  </main>
+    <script type="module" src="../content/index.ts"></script>
+  </body>
+</html>
