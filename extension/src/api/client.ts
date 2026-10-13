@@ -1,23 +1,28 @@
+
 import type { Email } from "../types/email";
 
-const API_URL = import.meta.env.API_URL as string;
-
 export async function classifyEmails(emails: Email[]) {
-  const response = await fetch(`${API_URL}/classify`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      emails,
-    }),
+  const response = await chrome.runtime.sendMessage({
+    type: "CLASSIFY_EMAILS",
+    emails,
   });
 
-  if (!response.ok) {
-    throw new Error(
-      `API request failed: ${response.status} ${response.statusText}`
-    );
+  if (!response?.success) {
+    throw new Error(response?.error ?? "Classification failed");
   }
 
-  return response.json();
+  return response.data;
+}
+
+export async function classifyEmail(email: Email) {
+  const response = await chrome.runtime.sendMessage({
+    type: "CLASSIFY_EMAIL",
+    email,
+  });
+
+  if (!response?.success) {
+    throw new Error(response?.error ?? "Classification failed");
+  }
+
+  return response.data;
 }

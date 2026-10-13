@@ -2,7 +2,7 @@
 
 import type { Email } from "../types/email";
 import { classifyEmails } from "../api/client";
-
+import { classifyEmail } from "../api/client";
 
 
 function parseCurrentEmail(): Email | null {
@@ -84,10 +84,14 @@ function parseEmailsSnippets(): Email[] {
   console.log("GyoMail: found rows:", rows.length);
 
   rows.forEach((row) => {
-    const senderElement = row.querySelector<HTMLElement>(".zF");
+    // Gmail changes sender classes depending on the row state.
+    const senderElement = row.querySelector<HTMLElement>(
+      '.yW span[email], .zF[email], .yW span[name], .zF'
+    );
 
+    // The subject can be inside either .bqe or another span in .bog.
     const subjectElement = row.querySelector<HTMLElement>(
-      ".bog .bqe"
+      ".bog .bqe, .bog span[data-thread-id]"
     );
 
     const snippetElement = row.querySelector<HTMLElement>(".y2");
@@ -97,37 +101,41 @@ function parseEmailsSnippets(): Email[] {
     );
 
     const threadElement = row.querySelector<HTMLElement>(
-      "[data-legacy-thread-id]"
+      "[data-thread-id], [data-legacy-thread-id]"
     );
-    
-    if (!senderElement || !subjectElement) {
-      return;
-    }
 
     const senderName =
-      senderElement.getAttribute("name") ??
-      senderElement.textContent?.trim() ??
+      senderElement?.getAttribute("name") ??
+      senderElement?.textContent?.trim() ??
       "";
 
     const senderEmail =
-      senderElement.getAttribute("email") ??
-      "";
+      senderElement?.getAttribute("email") ?? "";
 
     const subject =
-      subjectElement.textContent?.trim() ??
-      "";
+      subjectElement?.textContent?.trim() ?? "";
 
     const snippet =
-      snippetElement?.textContent?.trim() ??
-      "";
+      snippetElement?.textContent?.trim() ?? "";
 
     const timestamp =
-      timestampElement?.getAttribute("title") ??
-      "";
+      timestampElement?.getAttribute("title") ?? "";
 
     const threadId =
       threadElement?.getAttribute("data-thread-id") ??
+      threadElement?.getAttribute("data-legacy-thread-id") ??
       "";
+
+    // Log incomplete rows while debugging instead of silently losing them.
+    if (!senderElement || !subjectElement || !threadId) {
+      console.warn("GyoMail: skipped incomplete row", {
+        senderFound: !!senderElement,
+        subjectFound: !!subjectElement,
+        threadId,
+        row,
+      });
+      return;
+    }
 
     emails.push({
       id: threadId,
@@ -142,31 +150,34 @@ function parseEmailsSnippets(): Email[] {
     });
   });
 
+  console.log("GyoMail: parsed emails:", emails.length);
+
   return emails;
 }
 
-function waitForGmailEmails(): void {
-  const observer = new MutationObserver(() => {
-    const rows = document.querySelectorAll(
-      'tr[data-mt-item="mt-list"]'
-    );
+function waitForGmailEmails(): Promise<void> {
+  return new Promise((resolve) => {
+    const checkRows = () => {
+      const rows = document.querySelectorAll(
+        'tr[data-mt-item="mt-list"]'
+      );
 
-    if (rows.length === 0) {
-      return;
-    }
+      if (rows.length > 0) {
+        console.log("GyoMail: Gmail rows detected:", rows.length);
+        observer.disconnect();
+        resolve();
+      }
+    };
 
-    console.log("GyoMail: Gmail rows detected");
+    const observer = new MutationObserver(checkRows);
 
-    const emails = parseEmailsSnippets();
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+    });
 
-    console.log("GyoMail: parsed emails:", emails);
-
-    observer.disconnect();
-  });
-
-  observer.observe(document.body, {
-    childList: true,
-    subtree: true,
+    // Handle rows that already exist before the observer starts.
+    checkRows();
   });
 }
 
@@ -174,7 +185,7 @@ async function handleHash(hash: string) {
   console.log("Handling hash:", hash);
 
   if (hash === "#inbox") {
-    waitForGmailEmails();
+    await waitForGmailEmails();
 
     const emails = parseEmailsSnippets();
 
@@ -187,16 +198,21 @@ async function handleHash(hash: string) {
 
     try {
       const result = await classifyEmails(emails);
-
       console.log("API response:", result);
     } catch (error) {
       console.error("Failed to classify emails:", error);
     }
-
   } else if (hash.startsWith("#inbox/")) {
     const email = parseCurrentEmail();
-
     console.log("Parsed current email:", email);
+    if (!email) {
+      console.log("No email found.");
+      return;
+    }
+    const response = await classifyEmail(email);
+
+    console.log("API response for single email:", response);
+    
   }
 }
 

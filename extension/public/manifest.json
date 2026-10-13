@@ -9,7 +9,8 @@
   ],
 
   "host_permissions": [
-    "https://mail.google.com/*"
+    "https://mail.google.com/*",
+    "http://localhost:8000/*"
   ],
 
   "content_scripts": [
@@ -26,5 +27,8 @@
 
   "action": {
     "default_popup": "src/popup/index.html"
+  },
+  "background": {
+    "service_worker": "background.js"
   }
 }

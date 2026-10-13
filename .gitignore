@@ -1,2 +1,4 @@
 .env
 extension/dist/
+gyomail/
+__pycache__/
