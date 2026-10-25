@@ -2,3 +2,6 @@
 extension/dist/
 gyomail/
 __pycache__/
+backend/test.py
+*.csv
+*.joblib
