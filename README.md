@@ -393,16 +393,15 @@ Make sure the extension's API URL points to the running backend. The extension c
 
 ## Dataset and model training
 
-The training pipeline is based on the public [Phishing Email Dataset](https://arxiv.org/abs/2405.11619) by Al-Subaiey et al. (2024). It combines six email corpora:
+The fine-tuning process used multiple public datasets to improve coverage of phishing and legitimate emails across English and Arabic.
 
-- Enron
-- Ling
-- CEAS
-- Nazario
-- Nigerian Fraud
-- SpamAssassin
+- **[English–Arabic Phishing Email Corpus](https://www.kaggle.com/datasets/saidasalloum/englisharabic-phishing-email-corpus)** by Said Asalloum. Includes bilingual phishing-email data, supporting experimentation with English and Arabic classification.
+- **[Phishing Email Dataset](https://www.kaggle.com/datasets/naserabdullahalam/phishing-email-dataset)** by Naser Abdullah Alam. A collection combining six email corpora: Enron, Ling, CEAS, Nazario, Nigerian Fraud, and SpamAssassin.
+- **[Arabic Phishing and Legitimate Emails Samples](https://www.kaggle.com/datasets/rianshalyozbaky/arabic-phishing-and-legitimate-emails-samples)** by Rian Shalyozbaky. Provides Arabic phishing and legitimate email samples for experiments with Arabic-language classification.
 
-The dataset builder cleans the source data, removes duplicates and unsuitable rows, constructs text from email subjects and bodies, and generates stratified training, validation, and test splits.
+These datasets complemented the training pipeline by providing additional examples for fine-tuning and exploring multilingual phishing detection, particularly Arabic email classification.
+
+Dataset preprocessing, label normalization, and duplicate handling are important when combining sources, as differences in formatting, class balance, and collection methods can introduce bias or data leakage.
 
 ### Fine-tuning
 
