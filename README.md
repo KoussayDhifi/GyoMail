@@ -109,6 +109,7 @@ Language detection helps identify potential language-specific limitations, but i
 ## Classification pipeline
 
 ```text
+
                          Gmail Inbox
                              |
                              v
@@ -133,23 +134,25 @@ Language detection helps identify potential language-specific limitations, but i
                   |                     v
                   |              Language Detection
                   |                     |
-                  |          +----------+----------+
-                  |          |          |          |
-                  |          v          v          v
-                  |       English     Arabic     French
-                  |          |          |          |
-                  |          v          v          v
-                  |     Configured    AraBERT   Limited
-                  |     Classifier   (Experimental) reliability
-                  |          |          |          |
-                  |          +----------+----------+
+                  |              +------+------+ 
+                  |              |             |
+                  |              v             v
+                  |          English /      Arabic
+                  |           French          |
+                  |              |             v
+                  |              |          AraBERT
+                  |              |       (Experimental)
+                  |              v             |
+                  |       Fine-tuned           |
+                  |       DistilRoBERTa        |
+                  |              |             |
+                  |              +------+------+
                   |                     |
                   |                     v
-                  |              Classification
-                  |                  Result
+                  |             Classification Result
                   |                     |
                   |                     v
-                  |               Cache Result
+                  |                Cache Result
                   |                     |
                   +----------+----------+
                              |
@@ -159,6 +162,7 @@ Language detection helps identify potential language-specific limitations, but i
                              v
                           Gmail UI
                     Phishing / Legitimate
+
 ```
 
 ### Preview-first classification
@@ -167,18 +171,22 @@ When Gmail displays an inbox row, the full message body may not yet be available
 
 When the email body becomes available, the extension can submit the fuller content for classification. A body-based result takes priority over a snippet-only result in the shared cache logic.
 
-### Language detection and model selection
 
-GyoMail incorporates language detection to help determine which classification path is appropriate for an email.
+### Language detection and classification
 
-- **English:** Uses the configured English classification engine. The fine-tuned DistilRoBERTa model is the intended primary engine.
-- **Arabic:** Uses AraBERT for Arabic email classification. This path is experimental, and its predictions are not consistently accurate.
-- **French:** Classification reliability is limited. French email predictions should not be treated as dependable phishing verdicts.
-- **Other languages:** Support is limited and depends on the available detection and classification logic.
+GyoMail uses language detection to help select the appropriate classification path.
 
-Language detection is a separate source of uncertainty. A detector can misidentify an email, particularly when messages contain short snippets, mixed languages, or limited text. A high language-detection confidence score does not guarantee that the detected language is correct.
+- **English:** Classified using the fine-tuned DistilRoBERTa model.
+- **French:** Uses the same fine-tuned DistilRoBERTa model as English. However, French classification is unreliable because the model's fine-tuning and training data are primarily oriented toward English. French emails may still receive predictions, but results can be inconsistent or influenced by English-language patterns.
+- **Arabic:** Uses AraBERT through an experimental classification path. Its predictions are not consistently accurate and should be treated as experimental.
+- **Other languages:** Support is limited and depends on the available classification logic.
 
-Selecting a language-specific model does not guarantee an accurate phishing classification.
+Because English and French share the same model, the classifier does not provide a dedicated French-language model. French emails may produce a result, but that does not mean the result is dependable. Emails containing a mixture of English and French may also be classified based on patterns learned from English text, potentially affecting the verdict.
+
+Language detection itself can also make mistakes, particularly with short snippets, mixed-language messages, or emails containing very little text.
+
+Treat all predictions as assistance rather than proof that an email is malicious or safe.
+
 
 ### Cache behavior
 
