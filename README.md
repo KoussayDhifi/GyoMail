@@ -1,7 +1,7 @@
 
 <div align="center">
 
-<img src="extension/dist/icons/icon1024.png" alt="GyoMail eye icon" width="150">
+<img src="extension/public/icons/icon1024.png" alt="GyoMail eye icon" width="150">
 
 # GyoMail
 
