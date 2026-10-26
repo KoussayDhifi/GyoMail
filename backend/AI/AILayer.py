@@ -1,14 +1,13 @@
 from transformers import pipeline
 from models.email import EmailRequest
 import re
-import unicodedata
-from html import unescape
-from html.parser import HTMLParser
 import math
 import os
 from functools import lru_cache
 import unicodedata
-from AI.preprocess import clean_text,preprocess_email
+from AI.preprocess import clean_text, preprocess_email, concatenate_email,clean_email_text
+from AI.detectEmailLanguage import detect_email_language
+from AI.arabicClassifier import classify_arabic_text
 import joblib
 
 ENGINE = os.environ.get("GYO_ENGINE", "finetuned")
@@ -29,6 +28,8 @@ CLASS_LABELS = [
     "Phishing",
     "Legitimate"
 ]
+
+
 
 @lru_cache(maxsize=1)
 def _zero_shot_pipeline():
@@ -52,95 +53,7 @@ GyoClassifier = pipeline(
 )
 
 
-class EmailHTMLParser(HTMLParser):
-    BLOCK_TAGS = {
-        "address", "article", "blockquote", "div", "footer",
-        "h1", "h2", "h3", "h4", "h5", "h6", "header",
-        "li", "main", "ol", "p", "section", "table", "tr", "ul",
-    }
 
-    SKIP_TAGS = {"script", "style", "noscript"}
-
-    def __init__(self):
-        super().__init__(convert_charrefs=True)
-        self.parts = []
-        self.skip_depth = 0
-        self.link_stack = []
-
-    def handle_starttag(self, tag, attrs):
-        attrs = dict(attrs)
-
-        if tag in self.SKIP_TAGS:
-            self.skip_depth += 1
-            return
-
-        if self.skip_depth:
-            return
-
-        if tag in self.BLOCK_TAGS:
-            self.parts.append("\n")
-
-        if tag == "br":
-            self.parts.append("\n")
-
-        elif tag == "img":
-            alt = attrs.get("alt", "").strip()
-            if alt:
-                self.parts.append(f" {alt} ")
-
-        elif tag == "a":
-            self.link_stack.append(attrs.get("href", "").strip())
-
-    def handle_endtag(self, tag):
-        if tag in self.SKIP_TAGS:
-            if self.skip_depth:
-                self.skip_depth -= 1
-            return
-
-        if self.skip_depth:
-            return
-
-        if tag == "a" and self.link_stack:
-            href = self.link_stack.pop()
-            if href:
-                self.parts.append(f" (link: {href}) ")
-
-        if tag in self.BLOCK_TAGS:
-            self.parts.append("\n")
-
-    def handle_data(self, data):
-        if not self.skip_depth:
-            self.parts.append(data)
-
-    def get_text(self):
-        return "".join(self.parts)
-
-
-def clean_email_text(value: str | None) -> str:
-    if not value:
-        return ""
-
-    # Decode entities such as &amp;, &#x20;, and &nbsp;.
-    value = unescape(value)
-
-    # Extract readable text from HTML while retaining anchor destinations.
-    parser = EmailHTMLParser()
-    parser.feed(value)
-    parser.close()
-
-    text = unescape(parser.get_text())
-
-    # Normalize Unicode, including unusual whitespace characters.
-    text = unicodedata.normalize("NFKC", text)
-    text = text.replace("\xa0", " ")
-
-    # Normalize line endings and collapse excessive blank lines.
-    text = text.replace("\r\n", "\n").replace("\r", "\n")
-    text = re.sub(r"[^\S\n]+", " ", text)
-    text = re.sub(r" *\n *", "\n", text)
-    text = re.sub(r"\n{3,}", "\n\n", text)
-
-    return text.strip()
 
 @lru_cache(maxsize=1)
 def _fine_tuned_pipeline():
@@ -157,38 +70,6 @@ def _fine_tuned_pipeline():
         token=os.environ.get("HF_TOKEN") or None,
         device=0 if torch.cuda.is_available() else -1,
     )
-
-def concatenate_email(email: EmailRequest) -> str:
-
-    sender_name = clean_email_text(email.sender.name)
-    sender_address = clean_email_text(email.sender.email)
-    subject = clean_email_text(email.subject)
-    snippet = clean_email_text(email.snippet)
-    body = clean_email_text(email.body)
-
-    sections = []
-
-    if sender_name or sender_address:
-        sender = sender_name or "Unknown"
-        if sender_address:
-            sender += f" <{sender_address}>"
-        sections.append(f"Sender:\n{sender}")
-
-    if subject:
-        sections.append(f"Subject:\n{subject}")
-
-    # Gmail snippets frequently repeat the beginning of the body.
-    # Include the preview when it adds information not found in the body.
-    if snippet and (
-        not body
-        or snippet.casefold() not in body.casefold()
-    ):
-        sections.append(f"Email preview:\n{snippet}")
-
-    if body:
-        sections.append(f"Email body:\n{body}")
-
-    return "\n\n".join(sections)
 
 
 
@@ -218,9 +99,7 @@ def _classify_zero_shot(email: EmailRequest) -> dict:
 def _classify_svm(email: EmailRequest) -> dict:
     # The SVM needs the stripped text it was trained on (lowercase, no punctuation,
     # no stop words), NOT concatenate_email's output.
-    print(email)
     text = preprocess_email(email, include_sender=SVM_INCLUDE_SENDER)
-    print(f"Text : {text}")
  
     #if not text:
         #raise ValueError("Email contains no classifiable text.")
@@ -301,15 +180,58 @@ def _classify_fine_tuned(email: EmailRequest) -> dict:
         "score": p_phishing if is_phishing else 1.0 - p_phishing,
     }
  
+def _classify_arabic(email: EmailRequest) -> dict:
+
+    # Reuse the subject/body text format, with the snippet as fallback.
+    text = _finetuned_text(email)
+
+    if not text:
+        raise ValueError("Email contains no classifiable text.")
+
+    result = classify_arabic_text(text)
+
+    return {
+        "email_id": email.id,
+        "label": result["label"],
+        "score": result["score"],
+    }
+
 
 def classify_email(email: EmailRequest, engine: str | None = None) -> dict:
-    engine = engine or ENGINE
- 
+    # An explicitly supplied engine overrides automatic language routing.
+    if engine is None or engine == "auto":
+        language = detect_email_language(email)
+
+        if language == "ar":
+            result = _classify_arabic(email)
+            result["detected_language"] = "ar"
+            return result
+
+        if language == "fr":
+            
+            result = _classify_fine_tuned(email)
+            result["detected_language"] = "fr"
+            result["language_warning"] = (
+                "GyoMail's phishing detection is primarily optimized for "
+                "English. Results for French emails may be less reliable."
+            )
+            return result
+
+        engine = ENGINE
+
     if engine == "svm":
         return _classify_svm(email)
+
     if engine == "zeroshot":
         return _classify_zero_shot(email)
+
     if engine == "finetuned":
         return _classify_fine_tuned(email)
- 
-    raise ValueError(f"Unknown engine {engine!r}. Use 'svm' or 'zeroshot'.")
+
+    if engine == "arabert":
+        return _classify_arabic(email)
+
+    raise ValueError(
+        f"Unknown engine {engine!r}. "
+        "Use 'auto', 'svm', 'zeroshot', 'finetuned', or 'arabert'."
+    )
