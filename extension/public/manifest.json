@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "GyoMail",
-  "version": "0.1.0",
+  "version": "1.0",
   "description": "AI-powered email classification for Gmail.",
 
   "permissions": [
@@ -26,9 +26,21 @@
   ],
 
   "action": {
-    "default_popup": "src/popup/index.html"
+    "default_popup": "src/popup/index.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
   },
   "background": {
     "service_worker": "background.js"
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
   }
+  
+  
 }
