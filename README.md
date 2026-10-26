@@ -39,13 +39,14 @@ GyoMail is a Chrome extension that uses AI to flag potentially phishing emails d
 
 The extension detects visible email messages, extracts their available metadata, sends them to a backend classifier, and displays a **Phishing** or **Legitimate** indicator in the Gmail interface.
 
-The project also explores three approaches to phishing detection:
+The project explores three approaches to phishing detection, alongside language-specific classification for Arabic emails:
 
-- **Fine-tuned DistilRoBERTa:** the intended primary classification engine.
+- **Fine-tuned DistilRoBERTa:** the intended primary English classification engine.
 - **TF-IDF + linear SVM:** a lightweight classical machine-learning baseline.
 - **BART zero-shot classification:** the original approach, retained for comparison.
+- **AraBERT:** an experimental classification path for Arabic emails.
 
-The goal is not to claim that AI can magically distinguish every malicious email. It is to make suspicious messages easier to spot while exploring the practical challenges of deploying text classification in a real inbox.
+The goal is to make suspicious messages easier to spot while exploring the practical challenges of deploying text classification in a real inbox.
 
 ## Features
 
@@ -57,8 +58,10 @@ The goal is not to claim that AI can magically distinguish every malicious email
 - Redis-backed classification-result caching.
 - Shared caching logic for single-email and batch endpoints.
 - Interchangeable classification engines configured through `GYO_ENGINE`.
+- Language detection to help identify the appropriate classification path.
+- Experimental Arabic email classification using AraBERT.
+- Warnings for languages where classification reliability is limited.
 - Dataset preparation, SVM training, and transformer fine-tuning scripts.
-- Language metadata and warnings where supported by the backend.
 
 ## Architecture
 
@@ -89,6 +92,7 @@ It handles:
 - Email ID normalization.
 - Redis cache lookup and updates.
 - Classification-engine selection.
+- Language metadata and warnings.
 - Error handling and logging.
 - Rate limiting where configured.
 
@@ -98,57 +102,63 @@ Redis provides shared in-memory storage for rate limiting and temporary classifi
 
 The AI layer determines whether an email should be labeled phishing or legitimate.
 
-It supports three interchangeable engines, allowing different approaches to be compared through the same API.
+It supports multiple classification approaches, including a fine-tuned English transformer, classical machine learning, zero-shot classification, and an experimental Arabic classification path.
+
+Language detection helps identify potential language-specific limitations, but it is not infallible. Incorrect language detection can lead to the wrong classification path being selected.
 
 ## Classification pipeline
 
 ```text
-                  Gmail Inbox
-                      |
-                      v
-              Chrome Extension
-                      |
-             Detect visible emails
-                      |
-             Extract email metadata
-                      |
-                      v
-              Batch API Request
-                      |
-                      v
-                 FastAPI
-                      |
-              Normalize email ID
-                      |
-                      v
-                Redis Lookup
-                      |
-             +--------+--------+
-             |                 |
-          Cache Hit         Cache Miss
-             |                 |
-             |                 v
-             |          AI Classifier
-             |                 |
-             |       +---------+---------+
-             |       |         |         |
-             |       v         v         v
-             |   Fine-tuned   TF-IDF    BART
-             |   DistilRoBERTa + SVM   Zero-shot
-             |       |         |         |
-             |       +---------+---------+
-             |                 |
-             |                 v
-             |           Cache Result
-             |                 |
-             +--------+--------+
-                      |
-                      v
-            Classification Response
-                      |
-                      v
-                 Gmail UI
-             Phishing / Legitimate
+                         Gmail Inbox
+                             |
+                             v
+                     Chrome Extension
+                             |
+                    Detect visible emails
+                             |
+                    Extract email metadata
+                             |
+                             v
+                      FastAPI Backend
+                             |
+                     Normalize email ID
+                             |
+                             v
+                       Redis Lookup
+                             |
+                  +----------+----------+
+                  |                     |
+               Cache Hit             Cache Miss
+                  |                     |
+                  |                     v
+                  |              Language Detection
+                  |                     |
+                  |          +----------+----------+
+                  |          |          |          |
+                  |          v          v          v
+                  |       English     Arabic     French
+                  |          |          |          |
+                  |          v          v          v
+                  |     Configured    AraBERT   Limited
+                  |     Classifier   (Experimental) reliability
+                  |          |          |          |
+                  |          +----------+----------+
+                  |                     |
+                  |                     v
+                  |              Classification
+                  |                  Result
+                  |                     |
+                  |                     v
+                  |               Cache Result
+                  |                     |
+                  +----------+----------+
+                             |
+                             v
+                  Classification Response
+                             |
+                             v
+                          Gmail UI
+                    Phishing / Legitimate
 ```
 
 ### Preview-first classification
@@ -156,6 +166,19 @@ It supports three interchangeable engines, allowing different approaches to be c
 When Gmail displays an inbox row, the full message body may not yet be available. GyoMail can classify the available preview first, giving the user an early indication.
 
 When the email body becomes available, the extension can submit the fuller content for classification. A body-based result takes priority over a snippet-only result in the shared cache logic.
+
+### Language detection and model selection
+
+GyoMail incorporates language detection to help determine which classification path is appropriate for an email.
+
+- **English:** Uses the configured English classification engine. The fine-tuned DistilRoBERTa model is the intended primary engine.
+- **Arabic:** Uses AraBERT for Arabic email classification. This path is experimental, and its predictions are not consistently accurate.
+- **French:** Classification reliability is limited. French email predictions should not be treated as dependable phishing verdicts.
+- **Other languages:** Support is limited and depends on the available detection and classification logic.
+
+Language detection is a separate source of uncertainty. A detector can misidentify an email, particularly when messages contain short snippets, mixed languages, or limited text. A high language-detection confidence score does not guarantee that the detected language is correct.
+
+Selecting a language-specific model does not guarantee an accurate phishing classification.
 
 ### Cache behavior
 
@@ -172,15 +195,18 @@ This avoids unnecessary model inference while ensuring that a preview-only resul
 
 The engine is selected using the `GYO_ENGINE` environment variable or, where supported, by passing an engine directly to the classifier.
 
-| Engine | Model | Input | Purpose |
+| Engine / path | Model | Input | Purpose |
 |---|---|---|---|
-| `finetuned` | Fine-tuned `distilroberta-base` | Subject and email body | Intended primary engine |
+| `finetuned` | Fine-tuned `distilroberta-base` | Subject and email body | Intended primary English classifier |
 | `svm` | TF-IDF + linear SVM | Preprocessed text | Classical ML baseline |
 | `zeroshot` | `facebook/bart-large-mnli` | Sender, subject, preview, and body | Original zero-shot baseline |
+| Arabic path | AraBERT | Arabic email text | Experimental Arabic classification |
 
 The code default is `svm`. Set `GYO_ENGINE=finetuned` to select the fine-tuned transformer.
 
-Each model requires its own preprocessing. The SVM relies on its text-cleaning and TF-IDF pipeline, while the transformer is designed to process more natural text. Using the wrong preprocessing can significantly affect results.
+The Arabic path is intended for Arabic emails, but its accuracy remains limited. French emails are also not reliably classified.
+
+Each model requires its own preprocessing. The SVM relies on its text-cleaning and TF-IDF pipeline, while transformer models are designed to process natural text. Using the wrong preprocessing can significantly affect results.
 
 ### Fine-tuned DistilRoBERTa
 
@@ -193,6 +219,12 @@ The classical baseline uses TF-IDF features built from unigrams and bigrams, fol
 ### BART zero-shot classification
 
 The original engine uses `facebook/bart-large-mnli` to classify emails without task-specific fine-tuning. It was retained to compare the initial zero-shot approach with the other models.
+
+### AraBERT for Arabic emails
+
+AraBERT provides a language-specific path for Arabic email classification. It is included to explore multilingual phishing detection, but its current accuracy is limited.
+
+Its predictions should be treated as experimental. They must not be considered reliable evidence that an email is either malicious or safe.
 
 ## Tech stack
 
@@ -314,7 +346,7 @@ Navigate to the backend directory, install the project's Python dependencies, an
 uvicorn main:app --reload
 ```
 
-Open `http://localhost:8000/`. The health endpoint should indicate whether Redis is connected.
+Open [http://localhost:8000/](http://localhost:8000/). The health endpoint should indicate whether Redis is connected.
 
 ### 3. Configure the classifier
 
@@ -431,7 +463,11 @@ A classification based on a snippet contains less information than one based on 
 
 ### Language support
 
-The classifier is primarily optimized for English. Language detection can make mistakes, and a language warning does not make a classification in an unsupported language reliable.
+GyoMail includes language detection and an experimental Arabic classification path using AraBERT. However, Arabic classification is not consistently accurate, and French email classification is also unreliable.
+
+Language detection can misidentify emails, particularly when they contain mixed languages, short snippets, or limited text. A language warning indicates a known limitation; it does not make the classification reliable.
+
+Do not treat predictions for Arabic, French, or other insufficiently supported languages as dependable phishing verdicts.
 
 ### Scores are not guarantees
 
@@ -468,9 +504,9 @@ If you use the dataset, cite the following paper:
 
 ## Final release
 
-This release brings together the Chrome extension, FastAPI backend, Redis caching, and interchangeable classification engines.
+This release brings together the Chrome extension, FastAPI backend, Redis caching, language detection, and interchangeable classification engines.
 
-The project retains its training and evaluation pipeline so the approaches can be reproduced and compared. The fine-tuned DistilRoBERTa model is the intended primary engine, while the real-world accuracy gap and language limitations remain explicit constraints.
+The project retains its training and evaluation pipeline so the approaches can be reproduced and compared. Fine-tuned DistilRoBERTa is the intended primary English classifier, while AraBERT provides an experimental Arabic path. Real-world accuracy and language limitations remain explicit constraints.
 
 ---
 
