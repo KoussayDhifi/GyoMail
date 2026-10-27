@@ -1,0 +1,21 @@
+Total emails: 30
+Correct predictions: 25
+Incorrect predictions: 5
+Accuracy: 0.8333
+Phishing precision: 0.8571
+Phishing recall: 0.8000
+Phishing F1-score: 0.8276
+
+Confusion matrix:
+[[13  2]
+ [ 3 12]]
+
+Classification report:
+              precision    recall  f1-score   support
+
+  Legitimate       0.81      0.87      0.84        15
+    Phishing       0.86      0.80      0.83        15
+
+    accuracy                           0.83        30
+   macro avg       0.83      0.83      0.83        30
+weighted avg       0.83      0.83      0.83        30

@@ -5,3 +5,4 @@ __pycache__/
 backend/test.py
 *.csv
 *.joblib
+testmail.py

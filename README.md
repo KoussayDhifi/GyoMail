@@ -512,6 +512,50 @@ If you use the dataset, cite the following paper:
 
 > Al-Subaiey, A., Al-Thani, M., Alam, N. A., Antora, K. F., Khandakar, A., & Zaman, S. A. U. (2024). *Novel Interpretable and Robust Web-based AI Platform for Phishing Email Detection.* arXiv:2405.11619. https://arxiv.org/abs/2405.11619
 
+## Benchmark
+
+### Fine-tuned DistilRoBERTa: API evaluation
+
+The fine-tuned DistilRoBERTa model was evaluated through the running GyoMail FastAPI backend using 30 synthetic English emails: 15 legitimate emails and 15 phishing emails. Predictions were compared against their expected labels.
+
+| Metric | Result |
+|---|---:|
+| Total emails | 30 |
+| Correct predictions | 25 / 30 |
+| Incorrect predictions | 5 / 30 |
+| Accuracy | 83.33% |
+| Phishing precision | 85.71% |
+| Phishing recall | 80.00% |
+| Phishing F1-score | 82.76% |
+
+#### Confusion matrix
+
+Rows represent actual labels; columns represent predicted labels.
+
+| Actual label | Predicted: Legitimate | Predicted: Phishing |
+|---|---:|---:|
+| Legitimate | 13 | 2 |
+| Phishing | 3 | 12 |
+
+The model correctly classified 13 of 15 legitimate emails and detected 12 of 15 phishing emails. It incorrectly flagged two legitimate emails and missed three phishing emails.
+
+#### Interpretation
+
+The evaluation achieved **83.33% accuracy**, with an **82.76% F1-score for phishing detection**. Phishing precision of 85.71% indicates that most emails flagged as phishing in this test set were genuinely phishing examples, while recall of 80.00% indicates that the model detected four out of every five phishing examples.
+
+These results provide an initial benchmark for the fine-tuned model integrated into GyoMail's API pipeline. They should not be interpreted as a reliable estimate of real-world production accuracy: the evaluation used only 30 synthetic emails, and its balanced class distribution does not necessarily reflect a real inbox.
+
+#### Reproducibility
+
+The evaluation script sends the test emails directly to the `/classify-email` endpoint and exports the results for further analysis.
+
+Generated artifact:
+
+- `evaluation_results/summary.txt`: evaluation metrics and confusion matrix.
+
+This benchmark serves as an initial reference point for future experiments involving larger datasets, unseen real-world emails, and comparisons between the fine-tuned transformer, TF-IDF + SVM, and zero-shot BART classifiers.
+
+
 ## Final release
 
 This release brings together the Chrome extension, FastAPI backend, Redis caching, language detection, and interchangeable classification engines.
